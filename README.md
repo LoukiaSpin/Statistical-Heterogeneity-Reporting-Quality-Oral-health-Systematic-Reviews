@@ -1,10 +1,10 @@
-# Statistical heterogeneity reporting and interpretation quality in oral health systemaic reviews
+# Reporting and interpretation quality of statistical heterogeneity in oral health systematic reviews
 
 ## Description of the repository
 
 The repository offers the typical structure of separate folders for the data (the datasets in .RData), R (scripts to replicate the main Table and Figures) and output (file _Figures_). 
-* Each R script indicates which Figure it produces (one Figure only)
-* The data folder includes three datasets: one with data at systematic review level (_Dataset_Review level.RData_), one with data at meta-analysis level (_Dataset_Meta level.RData_), and one with data at the summary results of the selected meta-analyses (_Dataset_Pooled level.RData_).
+* In the __R folder__, each R script indicates which Figure it produces (one Figure only)
+* The __data folder__ includes three datasets: one with data at systematic review level (_Dataset_Review level.RData_), one with data at meta-analysis level (_Dataset_Meta level.RData_), and one with data at the summary results of the selected meta-analyses (_Dataset_Pooled level.RData_).
 
 After downloading/cloning the repo, the user can use the .Rproj file to source all code.
 
