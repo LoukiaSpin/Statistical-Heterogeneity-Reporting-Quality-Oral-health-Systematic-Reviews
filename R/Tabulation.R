@@ -61,7 +61,7 @@ meta_level %>%
                 `i2 ci` ~ "categorical",
                 est_type ~ "categorical",
                 Meta_model_choice ~ "categorical",
-                `choice explained` ~ "categorical",
+                #`choice explained` ~ "categorical",
                 Meta_hetero ~ "categorical",
                 Interpret_heter ~ "categorical",
                 Interpret_tau ~ "categorical"),
@@ -69,6 +69,15 @@ meta_level %>%
   add_overall() %>%
   italicize_levels() 
 
+# Restrict to meta-analyses that selected the model a prior
+subset(meta_level, Meta_model_choice == "Yes")[, c(1, 8)] %>% 
+  tbl_summary(
+    by = meta_model,
+    statistic = list(all_categorical() ~ "{n} ({p}%)"),
+    type = list( `choice explained` ~ "categorical"),
+    digits = list(all_categorical() ~ c(0, 1))) %>%
+  add_overall() %>%
+  italicize_levels() 
 
 
 ## At pooled level ----
