@@ -1,7 +1,7 @@
 #*******************************************************************************
 #*
 #*                               Create Figure 4
-#*                               (Mosaic plots) 
+#*                             (Stacked bar plots) 
 #*                                                       
 #* Author: Loukia Spineli
 #* Year: July 2024         
@@ -10,22 +10,8 @@
 
 
 ## Load R packages ----
-list.of.packages <- c("plyr", "ggmosaic", "ggpubr")
+list.of.packages <- c("plyr", "ggplot2", "ggpubr")
 lapply(list.of.packages, require, character.only = TRUE); rm(list.of.packages)
-
-
-
-#' Function to calculate conditional percentages in mosaic plot
-#' Source: https://www.kaggle.com/code/dhafer/mosaics-plots-using-ggmosaic
-conditional_perc <- function (plot_data) {
-  
-  get_data <- ggplot_build(plot_data)$data %>% as.data.frame()
-  get_data_new <- get_data[order(get_data[, 9], get_data[, 2]), ]
-  y_perc <- tapply(get_data_new$.n, factor(get_data_new$fill, levels = unique(get_data_new$fill)), function(x) x/sum(x))
-  get_data_new$percentage <- paste0(sprintf("%1.f", unlist(y_perc) * 100), "%")
-
-  return(get_data_new)
-}
 
 
 
@@ -61,136 +47,199 @@ data_meta$Interpret_tau <- factor(revalue(factor(data_meta$Interpret_tau),
 # Prepare dataset
 data_plot1 <- data.frame(data_meta$Meta_model_choice, data_meta$Interpret_heter)
 colnames(data_plot1) <- c("Model_choice", "Interpret_I2")
-data_plot1[is.na(data_plot1)] <- "Other"
 
-# Prepare mosaic plot
+# Calculate % conditionally on 'Model_choice'
+data_plot1_new <- 
+  data_plot1 %>%
+  count() %>%
+  group_by(Model_choice) %>%
+  mutate(perc = freq / sum(freq))
+
+# Prepare stacked bar plot
 plot1 <- 
-  ggplot(data_plot1) +
-  geom_mosaic(aes(x = product(Model_choice, Interpret_I2), 
-                  fill = Model_choice), # Of those chosen the model a priori ...
-              offset = 0.033,
-              show.legend = TRUE) +
+  ggplot(data_plot1_new,
+         aes(x = Model_choice,
+             y = perc,
+             fill = Interpret_I2)) +
+  geom_bar(stat = "identity",
+           position = "fill") +
+  geom_text(aes(x = Model_choice,
+                y = perc,
+                group = Interpret_I2,
+                label = ifelse(perc > 0.04, paste0(round(perc * 100, 0), "% (", freq,")"), " ")),
+            hjust = 0.5,
+            vjust = 1.0,
+            size = 4.0,
+            position = "stack",
+            colour = "white") +
+  labs(x = "Model chosen a priori?",
+       y = "Percentage meta-analyses (%)",
+       fill = expression(bold(paste("Heterogeneity interpreted with ", I^{2})))) +
   scale_fill_manual(breaks = c("Yes", "No", "Other"),
                     values = c("#1B9E77", "#D95F02", "#7570B3")) +
-  labs(x = "",#x = expression(bold(paste("Heterogeneity interpreted with ", I^{2}))),
-       y = "Model chosen a priori?",
-       fill = "") +
+  scale_y_continuous(labels = scales::label_percent(suffix = " ")) +
   theme_classic() +
   theme(axis.title = element_text(size = 14, face = "bold"),
-        axis.text = element_text(size = 12),
-        legend.text = element_text(size = 14))
-
-# Add conditional percentages
-plot1_new <- plot1 +
-  geom_text(data = conditional_perc(plot1), 
-            aes(x = (xmin + xmax)/2, 
-                y = (ymin + ymax)/2, 
-                label = percentage))
+        axis.text = element_text(size = 14),
+        legend.text = element_text(size = 14),
+        legend.title = element_text(size = 14, face = "bold"))
+  
 
 
 ## Meta-analysis model chosen a priori AND Heterogeneity interpretation was based on tau2
 # Prepare dataset
 data_plot2 <- data.frame(data_meta$Meta_model_choice, data_meta$Interpret_tau)
 colnames(data_plot2) <- c("Model_choice", "Interpret_tau2")
-data_plot2[is.na(data_plot2)] <- "Other"
 
-# Prepare mosaic plot
+# Calculate % conditionally on 'Model_choice'
+data_plot2_new <- 
+  data_plot2 %>%
+  count() %>%
+  group_by(Model_choice) %>%
+  mutate(perc = freq / sum(freq))
+
+# Prepare stacked bar plot
 plot2 <- 
-  ggplot(data_plot2) +
-  geom_mosaic(aes(x = product(Model_choice, Interpret_tau2), 
-                  fill = Model_choice), 
-              offset = 0.03,
-              show.legend = TRUE) +
+  ggplot(data_plot2_new,
+         aes(x = Model_choice,
+             y = perc,
+             fill = Interpret_tau2)) +
+  geom_bar(stat = "identity",
+           position = "fill") +
+  geom_text(aes(x = Model_choice,
+                y = perc,
+                group = Interpret_tau2,
+                label = ifelse(perc != 0, paste0(round(perc * 100, 0), "% (", freq,")"), " ")),
+            hjust = 0.5,
+            vjust = 1.0,
+            size = 4.0,
+            position = "stack",
+            colour = "white") +
+  labs(x = "Model chosen a priori?",
+       y = " ",
+       fill = expression(bold(paste("Heterogeneity interpreted with ", tau^{2})))) +
   scale_fill_manual(breaks = c("Yes", "No", "Other"),
                     values = c("#1B9E77", "#D95F02", "#7570B3")) +
-  labs(x = "", #x = expression(bold(paste("Heterogeneity interpreted with ", tau^{2}))),
-       y = "", #y = "Model chosen a priori?",
-       fill = "") +
+  scale_y_continuous(labels = scales::label_percent(suffix = " ")) +
   theme_classic() +
   theme(axis.title = element_text(size = 14, face = "bold"),
-        axis.text = element_text(size = 12),
-        legend.text = element_text(size = 14))
+        axis.text = element_text(size = 14),
+        legend.text = element_text(size = 14),
+        legend.title = element_text(size = 14, face = "bold"))
 
-# Add conditional percentages
-plot2_new <- plot2 +
-  geom_text(data = conditional_perc(plot2), 
-            aes(x = (xmin + xmax)/2, 
-                y = (ymin + ymax)/2, 
-                label = percentage))
 
 
 ## Choice of meta-analysis model based on I2 AND Heterogeneity interpretation was based on I2
 # Prepare dataset
 data_plot3 <- data.frame(data_meta$Meta_hetero, data_meta$Interpret_heter)
 colnames(data_plot3) <- c("Choice_based_I2", "Interpret_I2")
-data_plot3[is.na(data_plot3)] <- "Other"
 
-# Prepare mosaic plot
+# Calculate % conditionally on 'Choice_based_I2'
+data_plot3_new <- 
+  data_plot3 %>%
+  count() %>%
+  group_by(Choice_based_I2) %>%
+  mutate(perc = freq / sum(freq))
+
+# Prepare stacked bar plot
 plot3 <- 
-  ggplot(data_plot3) +
-  geom_mosaic(aes(x = product(Choice_based_I2, Interpret_I2), 
-                  fill = Choice_based_I2), 
-              offset = 0.04,
-              show.legend = TRUE) +
+  ggplot(data_plot3_new,
+         aes(x = Choice_based_I2,
+             y = perc,
+             fill = Interpret_I2)) +
+  geom_bar(stat = "identity",
+           position = "fill") +
+  geom_text(aes(x = Choice_based_I2,
+                y = perc,
+                group = Interpret_I2,
+                label = ifelse(perc > 0.04, paste0(round(perc * 100, 0), "% (", freq,")"), " ")),
+            hjust = 0.5,
+            vjust = 1.0,
+            size = 4.0,
+            position = "stack",
+            colour = "white") +
+  labs(x = expression(bold(paste("Model chosen based on ", I^{2}))),
+       y = "Percentage meta-analyses (%)",
+       fill = expression(bold(paste("Heterogeneity interpreted with ", I^{2})))) +
   scale_fill_manual(breaks = c("Yes", "No", "Other"),
                     values = c("#1B9E77", "#D95F02", "#7570B3")) +
-  labs(x = expression(bold(paste("Heterogeneity interpreted with ", I^{2}))),
-       y = expression(bold(paste("Model chosen based on ", I^{2}))),
-       fill = "") +
+  scale_y_continuous(labels = scales::label_percent(suffix = " ")) +
   theme_classic() +
   theme(axis.title = element_text(size = 14, face = "bold"),
-        axis.text = element_text(size = 12),
-        legend.text = element_text(size = 14))
+        axis.text = element_text(size = 14),
+        legend.text = element_text(size = 14),
+        legend.title = element_text(size = 14, face = "bold"))
 
-# Add conditional percentages
-plot3_new <- plot3 +
-  geom_text(data = conditional_perc(plot3), 
-            aes(x = (xmin + xmax)/2, 
-                y = (ymin + ymax)/2, 
-                label = percentage))
 
 
 ## Choice of meta-analysis model based on I2 AND Heterogeneity interpretation was based on tau2
 # Prepare dataset
 data_plot4 <- data.frame(data_meta$Meta_hetero, data_meta$Interpret_tau)
 colnames(data_plot4) <- c("Choice_based_I2", "Interpret_tau2")
-data_plot4[is.na(data_plot4)] <- "Other"
+
+# Calculate % conditionally on 'Choice_based_I2'
+data_plot4_new <- 
+  data_plot4 %>%
+  count() %>%
+  group_by(Choice_based_I2) %>%
+  mutate(perc = freq / sum(freq))
 
 # Prepare mosaic plot
 plot4 <- 
-  ggplot(data_plot4) +
-  geom_mosaic(aes(x = product(Choice_based_I2, Interpret_tau2), 
-                  fill = Choice_based_I2), 
-              offset = 0.03,
-              show.legend = TRUE) +
+  ggplot(data_plot4_new,
+         aes(x = Choice_based_I2,
+             y = perc,
+             fill = Interpret_tau2)) +
+  geom_bar(stat = "identity",
+           position = "fill") +
+  geom_text(aes(x = Choice_based_I2,
+                y = perc,
+                group = Interpret_tau2,
+                label = ifelse(perc != 0, paste0(round(perc * 100, 0), "% (", freq,")"), " ")),
+            hjust = 0.5,
+            vjust = 1.0,
+            size = 4.0,
+            position = "stack",
+            colour = "white") +
+  labs(x = expression(bold(paste("Model chosen based on ", I^{2}))),
+       y = " ",
+       fill = expression(bold(paste("Heterogeneity interpreted with ", tau^{2})))) +
   scale_fill_manual(breaks = c("Yes", "No", "Other"),
                     values = c("#1B9E77", "#D95F02", "#7570B3")) +
-  labs(x = expression(bold(paste("Heterogeneity interpreted with ", tau^{2}))),
-       y = "", #y = expression(bold(paste("Model chosen based on ", I^{2}))),
-       fill = "") +
+  scale_y_continuous(labels = scales::label_percent(suffix = " ")) +
   theme_classic() +
   theme(axis.title = element_text(size = 14, face = "bold"),
-        axis.text = element_text(size = 12),
-        legend.text = element_text(size = 14))
+        axis.text = element_text(size = 14),
+        legend.text = element_text(size = 14),
+        legend.title = element_text(size = 14, face = "bold"))
 
-# Add conditional percentages
-plot4_new <- plot4 +
-  geom_text(data = conditional_perc(plot4), 
-            aes(x = (xmin + xmax)/2, 
-                y = (ymin + ymax)/2, 
-                label = percentage))
 
-## Bring together
+
+## Bring together those sharing the shame legend
+# Heterogeneity interpreted with I2
+plots13 <- 
+  ggarrange(plot1, plot3,
+            nrow = 2,
+            labels = c("a)", "c)"),
+            common.legend = TRUE,
+            legend = "bottom")
+
+# Heterogeneity interpreted with tau2
+plots24 <- 
+  ggarrange(plot2, plot4,
+            nrow = 2,
+            labels = c("b)", "d)"),
+            common.legend = TRUE,
+            legend = "bottom")
+
+
+
+## Bring all together
 tiff("./Figures/Figure 4.tiff", 
      height = 25, 
      width = 50, 
      units = "cm", 
      compression = "lzw", 
      res = 600)
-ggarrange(plot1_new, plot2_new, plot3_new, plot4_new,
-          nrow = 2,
-          ncol = 2,
-          labels = c("a)", "b)", "c)", "d)"),
-          common.legend = TRUE,
-          legend = "none")
+ggarrange(plots13, plots24)
 dev.off()

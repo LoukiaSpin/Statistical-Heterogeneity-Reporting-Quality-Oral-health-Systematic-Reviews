@@ -12,7 +12,6 @@ After downloading/cloning the repo, the user can use the .Rproj file to source a
 
 Prerequisite R packages: 
 [dplyr](https://CRAN.R-project.org/package=dplyr),
-[ggmosaic](https://CRAN.R-project.org/package=ggmosaic),
 [ggplot2](https://CRAN.R-project.org/package=ggplot2),
 [ggpubr](https://cran.r-project.org/web/packages/ggpubr/),
 [gtsummary](https://CRAN.R-project.org/package=gtsummary),
